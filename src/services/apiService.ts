@@ -6,11 +6,16 @@ const api = axios.create({
 
 export const fetchChatRooms = async () => {
     const response = await api.get('');
-    return response.data;
+    return response.data.map((room: any) => ({
+        roomId: room.roomId,
+        creator: room.creator,
+        title: room.title,
+        createdAt: room.createdAt,
+    }));
 };
 
-export const createChatRoom = async (roomId: string) => {
-    await api.post('', null, { params: { roomId } });
+export const createChatRoom = async (creator: string, title: string) => {
+    await api.post('', null, { params: { creator, title } });
 };
 
 export const joinChatRoom = async (roomId: string, userId: string) => {
