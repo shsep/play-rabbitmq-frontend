@@ -18,6 +18,10 @@ export const createChatRoom = async (creator: string, title: string) => {
     await api.post('', null, { params: { creator, title } });
 };
 
-export const joinChatRoom = async (roomId: string, userId: string) => {
-    await api.post(`/${roomId}/join`, null, { params: { userId } });
+export const joinChatRoom = async (roomId: string, nickname: string) => {
+    await api.post(`/${roomId}/join`, null, { params: { nickname } });
+};
+
+export const leaveChatRoom = async (roomId: string, nickname: string) => {
+    await api.post(`/${roomId}/leave`, null, { params: { nickname } });
 };
