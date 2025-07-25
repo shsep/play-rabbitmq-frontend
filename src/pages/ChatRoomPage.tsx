@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import SockJS from 'sockjs-client';
 import { Client } from '@stomp/stompjs';
-import { Box, Typography, TextField, Button } from '@mui/material';
+import { Box, Button, TextField, Typography } from '@mui/material';
 import useChatStore from '../store/chatStore';
-import { joinChatRoom, leaveChatRoom } from '../services/apiService';
 
 const ChatRoomPage = () => {
     const { roomId } = useParams();
@@ -25,17 +24,17 @@ const ChatRoomPage = () => {
 
         setNickname(savedNickname);
 
-        // Join Chat Room (API 호출)
-        const enterRoom = async () => {
-            try {
-                await joinChatRoom(roomId!, savedNickname);
-            } catch (err) {
-                console.error('Failed to join chat room:', err);
-                navigate('/');
-            }
-        };
-
-        enterRoom();
+        // // Join Chat Room (API 호출)
+        // const enterRoom = async () => {
+        //     try {
+        //         await joinChatRoom(roomId!, savedNickname);
+        //     } catch (err) {
+        //         console.error('Failed to join chat room:', err);
+        //         navigate('/');
+        //     }
+        // };
+        //
+        // enterRoom();
     }, [roomId, navigate, setNickname]);
 
     useEffect(() => {
@@ -47,12 +46,17 @@ const ChatRoomPage = () => {
         const connectWebSocket = () => {
             console.log('Attempting to connect WebSocket...');
             socket = new SockJS(`${import.meta.env.VITE_API_BASE_URL}/ws`);
+
             client = new Client({
                 webSocketFactory: () => socket!,
                 debug: (str) => console.log(`STOMP: ${str}`),
                 reconnectDelay: 5000,
                 heartbeatIncoming: 10000,
                 heartbeatOutgoing: 10000,
+                connectHeaders: {
+                    roomId: roomId || '',
+                    nickname: nickname
+                },
                 onConnect: () => {
                     console.log('STOMP connected successfully!');
                     client?.subscribe(`/topic/${roomId}`, (msg) => {
@@ -63,20 +67,9 @@ const ChatRoomPage = () => {
                 onStompError: (frame) => {
                     console.error(`STOMP error: ${frame.headers['message']} | details: ${frame.body}`);
                 },
-                onWebSocketClose: () => {
-                    console.warn('WebSocket connection has been forcibly closed.');
-
-                    // Leave Chat Room (API 호출)
-                    const exitRoom = async () => {
-                        try {
-                            await leaveChatRoom(roomId!, nickname);
-                        } catch (err) {
-                            console.error('Failed to leave chat room:', err);
-                        }
-                    };
-
-                    exitRoom();
-                },
+                onDisconnect: () => {
+                    console.log('Disconnected from STOMP server.');
+                }
             });
 
             client.activate();
