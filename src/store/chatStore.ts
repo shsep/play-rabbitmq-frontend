@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-interface ChatRoom {
+export interface ChatRoom {
     roomId: string;
     creator: string;
     title: string;

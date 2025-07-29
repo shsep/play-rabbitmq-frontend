@@ -4,11 +4,14 @@ import SockJS from 'sockjs-client';
 import { Client } from '@stomp/stompjs';
 import { Box, Button, TextField, Typography } from '@mui/material';
 import useChatStore from '../store/chatStore';
+import type { ChatRoom } from '../store/chatStore';
+import { fetchChatRoom } from '../services/apiService';
 
 const ChatRoomPage = () => {
     const { roomId } = useParams();
     const navigate = useNavigate();
     const { nickname, setNickname } = useChatStore();
+    const [roomDetails, setRoomDetails] = useState<ChatRoom>();
     const [messages, setMessages] = useState<string[]>([]);
     const [message, setMessage] = useState('');
     const messageInputRef = useRef<HTMLInputElement | null>(null);
@@ -24,17 +27,17 @@ const ChatRoomPage = () => {
 
         setNickname(savedNickname);
 
-        // // Join Chat Room (API 호출)
-        // const enterRoom = async () => {
-        //     try {
-        //         await joinChatRoom(roomId!, savedNickname);
-        //     } catch (err) {
-        //         console.error('Failed to join chat room:', err);
-        //         navigate('/');
-        //     }
-        // };
-        //
-        // enterRoom();
+        const loadRoom = async () => {
+            try {
+                if (!roomId) return;
+                const room = await fetchChatRoom(roomId); // API 호출
+                setRoomDetails(room);
+            } catch (err) {
+                console.error('Failed to load chat room:', err);
+            }
+        };
+
+        loadRoom();
     }, [roomId, navigate, setNickname]);
 
     useEffect(() => {
@@ -127,7 +130,7 @@ const ChatRoomPage = () => {
 
     return (
         <Box p={3}>
-            <Typography variant="h4">{roomId} Chat Room</Typography>
+            <Typography variant="h4">{roomDetails?.title} Chat Room</Typography>
             <Box mt={2} height={300} overflow="auto" border={1} p={2}>
                 {messages.map((msg, idx) => (
                     <Typography key={idx}>{msg}</Typography>

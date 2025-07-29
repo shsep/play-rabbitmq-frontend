@@ -14,6 +14,17 @@ export const fetchChatRooms = async () => {
     }));
 };
 
+export const fetchChatRoom = async (roomId: string) => {
+    const response = await api.get('/' + roomId + '/details');
+    const room = response.data;
+    return {
+        roomId: room.roomId,
+        creator: room.creator,
+        title: room.title,
+        createdAt: room.createdAt,
+    };
+};
+
 export const createChatRoom = async (creator: string, title: string) => {
     await api.post('', null, { params: { creator, title } });
 };
