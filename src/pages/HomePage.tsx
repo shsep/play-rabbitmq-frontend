@@ -1,20 +1,49 @@
-import { useState, useEffect } from 'react';
-import { TextField, Box, Typography, List, ListItem, ListItemButton, Button, Alert } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
-import useChatStore from '../store/chatStore';
-import { fetchChatRooms, createChatRoom } from '../services/apiService';
+import React, { useState, useEffect } from "react";
+import {
+    TextField,
+    Box,
+    Typography,
+    List,
+    ListItem,
+    ListItemButton,
+    Button,
+    Alert,
+    Paper,
+    Stack,
+} from "@mui/material";
+import { createTheme, ThemeProvider } from "@mui/material/styles";
+import { useNavigate } from "react-router-dom";
+import useChatStore from "../store/chatStore";
+import { fetchChatRooms, createChatRoom } from "../services/apiService";
 
-const HomePage = () => {
-    const [newRoom, setNewRoom] = useState('');
+// MUI 커스텀 테마 설정
+const theme = createTheme({
+    palette: {
+        primary: {
+            main: "#4CAF50",
+        },
+        secondary: {
+            main: "#FFC107",
+        },
+        background: {
+            default: "#f4f6f8",
+        },
+    },
+    typography: {
+        fontFamily: "Roboto, Arial, sans-serif",
+    },
+});
+
+export default function HomePage() {
+    const [newRoom, setNewRoom] = useState("");
     const { nickname, setNickname, chatRooms, setChatRooms } = useChatStore();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
-    const [formError, setFormError] = useState('');
+    const [error, setError] = useState("");
+    const [formError, setFormError] = useState("");
 
     useEffect(() => {
-        // 로컬 스토리지에 저장된 닉네임 불러오기
-        const savedNickname = localStorage.getItem('nickname');
+        const savedNickname = localStorage.getItem("nickname");
         if (savedNickname) {
             setNickname(savedNickname);
         }
@@ -24,10 +53,10 @@ const HomePage = () => {
         const loadRooms = async () => {
             setLoading(true);
             try {
-                const rooms = await fetchChatRooms(); // API 호출
+                const rooms = await fetchChatRooms();
                 setChatRooms(rooms);
             } catch (err) {
-                setError('Failed to load chat rooms.');
+                setError("채팅방 목록을 불러오는 데 실패했습니다.");
             } finally {
                 setLoading(false);
             }
@@ -38,96 +67,173 @@ const HomePage = () => {
 
     const handleNicknameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const newNickname = event.target.value;
-        setNickname(newNickname); // Zustand store에 닉네임 업데이트
-        localStorage.setItem('nickname', newNickname); // 로컬 스토리지에 닉네임 저장
+        setNickname(newNickname);
+        localStorage.setItem("nickname", newNickname);
     };
 
     const handleCreateRoom = async () => {
-        // 닉네임과 방 이름 입력 여부 검사
         if (!nickname) {
-            setFormError('Please set your nickname before creating a room.');
+            setFormError("닉네임을 설정해주세요.");
             return;
         }
         if (!newRoom) {
-            setFormError('Please enter a room title.');
+            setFormError("채팅방 제목을 입력하세요.");
             return;
         }
 
         try {
-            await createChatRoom(nickname, newRoom); // creator: nickname, title: newRoom
+            await createChatRoom(nickname, newRoom);
             setChatRooms(await fetchChatRooms());
-            setNewRoom('');
-            setFormError(''); // 오류 메시지 초기화
+            setNewRoom("");
+            setFormError("");
         } catch (err) {
-            console.error('Failed to create chat room:', err);
-            setFormError('Failed to create chat room. Please try again.');
+            console.error("Failed to create chat room:", err);
+            setFormError("채팅방 생성이 실패했습니다. 다시 시도해주세요.");
         }
     };
 
     const handleRoomClick = (roomId: string) => {
-        // 닉네임이 설정되지 않으면 방 접속 불가
         if (!nickname) {
-            setFormError('Please set your nickname before joining a room.');
+            setFormError("닉네임을 설정해주세요.");
             return;
         }
         navigate(`/chatroom/${roomId}`);
     };
 
     return (
-        <Box p={3}>
-            <Typography variant="h4" mb={2}>Welcome to Chat Service</Typography>
-            <Box mb={3}>
-                <TextField
-                    label="Nickname"
-                    value={nickname}
-                    onChange={handleNicknameChange}
-                    fullWidth
-                />
+        <ThemeProvider theme={theme}>
+            <Box
+                sx={{
+                    minHeight: "100vh",
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    px: 2,
+                    backgroundImage: "linear-gradient(to bottom, #e3f2fd, #ffffff)",
+                }}
+            >
+                <Paper
+                    elevation={6}
+                    sx={{
+                        width: "100%",
+                        maxWidth: "800px",
+                        borderRadius: "16px",
+                        overflow: "hidden",
+                        p: 4,
+                        backgroundColor: "#ffffff",
+                    }}
+                >
+                    <Typography
+                        variant="h4"
+                        textAlign="center"
+                        mb={4}
+                        color="primary"
+                        sx={{ fontWeight: "bold" }}
+                    >
+                        오픈 채팅방
+                    </Typography>
+
+                    {/* 닉네임 설정 섹션 */}
+                    <Box mb={3}>
+                        <Typography variant="h6" mb={1}>
+                            닉네임 설정
+                        </Typography>
+                        <TextField
+                            label="닉네임"
+                            value={nickname}
+                            onChange={handleNicknameChange}
+                            fullWidth
+                            size="small" // TextField 높이 줄이기
+                            slotProps={{
+                                input: {
+                                    style: { height: "40px" }, // 텍스트 필드 높이 지정
+                                },
+                            }}
+                        />
+                    </Box>
+
+                    {/* 오류 출력 섹션 */}
+                    {formError && (
+                        <Alert severity="error" sx={{ mb: 3 }}>
+                            {formError}
+                        </Alert>
+                    )}
+
+                    {/* 채팅방 생성 섹션 */}
+                    <Box mb={3}>
+                        <Typography variant="h6" mb={1}>
+                            새 채팅방 만들기
+                        </Typography>
+                        <Stack direction="row" spacing={2} alignItems="center">
+                            <TextField
+                                label="새 채팅방 제목"
+                                value={newRoom}
+                                onChange={(e) => setNewRoom(e.target.value)}
+                                fullWidth
+                                size="small" // TextField 높이 줄이기
+                                slotProps={{
+                                    input: {
+                                        style: { height: "40px" }, // 텍스트 필드 높이 지정
+                                    },
+                                }}
+                            />
+                            <Button
+                                onClick={handleCreateRoom}
+                                variant="contained"
+                                color="primary"
+                                sx={{ height: '40px', minWidth: '100px' }} // Button 높이 및 넓이 조정
+                            >
+                            생성
+                            </Button>
+                        </Stack>
+                    </Box>
+
+                    {/* 채팅방 리스트 섹션 */}
+                    <Typography variant="h6" mb={2}>
+                        채팅방 목록
+                    </Typography>
+                    {loading ? (
+                        <Typography>채팅방 목록을 불러오는 중...</Typography>
+                    ) : error ? (
+                        <Typography color="error">{error}</Typography>
+                    ) : (
+                        <List
+                            sx={{
+                                borderRadius: "8px",
+                                overflowY: "auto",
+                                maxHeight: "300px",
+                                border: "1px solid #ddd",
+                                backgroundColor: "#fafafa",
+                            }}
+                        >
+                            {chatRooms.map((room) => (
+                                <ListItem
+                                    key={room.roomId}
+                                    disablePadding
+                                    sx={{ "&:hover": { backgroundColor: "#f1f1f1" } }}
+                                >
+                                    <ListItemButton onClick={() => handleRoomClick(room.roomId)}>
+                                        <Box>
+                                            <Typography variant="body1" fontWeight="bold">
+                                                {room.title}
+                                            </Typography>
+                                            <Typography
+                                                variant="body2"
+                                                color="textSecondary"
+                                                sx={{ fontStyle: "italic" }}
+                                            >
+                                                {`생성자: ${room.creator} (${new Date(
+                                                    room.createdAt
+                                                ).toLocaleString()})`}
+                                            </Typography>
+                                        </Box>
+                                    </ListItemButton>
+                                </ListItem>
+                            ))}
+                        </List>
+                    )}
+                </Paper>
             </Box>
-
-            {formError && (
-                <Alert severity="error" sx={{ mb: 3 }}>
-                    {formError}
-                </Alert>
-            )}
-
-            <Typography variant="h6">Chat Rooms</Typography>
-            {loading ? (
-                <Typography>Loading chat rooms...</Typography>
-            ) : error ? (
-                <Typography color="error">{error}</Typography>
-            ) : (
-                <List>
-                    {chatRooms.map((room) => (
-                        <ListItem key={room.roomId}>
-                            <ListItemButton onClick={() => handleRoomClick(room.roomId)}>
-                                <Box>
-                                    <Typography variant="body1">
-                                        <strong>{room.title}</strong>
-                                    </Typography>
-                                    <Typography variant="body2" color="textSecondary">
-                                        Created by {room.creator} at {new Date(room.createdAt).toLocaleString()}
-                                    </Typography>
-                                </Box>
-                            </ListItemButton>
-                        </ListItem>
-                    ))}
-                </List>
-            )}
-
-            <Box mt={3}>
-                <TextField
-                    label="New Room"
-                    value={newRoom}
-                    onChange={(e) => setNewRoom(e.target.value)}
-                    fullWidth
-                />
-                <Button onClick={handleCreateRoom} variant="contained" sx={{ mt: 1 }}>
-                    Create Room
-                </Button>
-            </Box>
-        </Box>
+        </ThemeProvider>
     );
-};
-
-export default HomePage;
+}
